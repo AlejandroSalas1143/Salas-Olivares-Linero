@@ -108,38 +108,6 @@ def process_mentions(tweet, mentions_info):
             mentions_info.setdefault(mentioned_username, {"mentions": []})
             mentions_info[mentioned_username]["mentions"].append({"mentionBy": tweet['user']['screen_name'], "tweets": [get_tweet_id(tweet)]})
 
-def decompress_and_create_json_files(directory, hashtags_file=None, fi=None, ff=None):
-    retweets_info = {}
-    mentions_info = {}
-    detener_procesamiento_ff = False
-
-    # Cargar hashtags desde el archivo
-    hashtags_set = set()
-    if hashtags_file:
-        with open(hashtags_file, 'r') as hashtags_file:
-            hashtags_set = {line.strip().lower() for line in hashtags_file}
-    
-    # Utilizamos Path para manejar rutas de manera más eficiente
-    base_path = Path(directory)
-
-    file_paths = base_path.rglob('*.json.bz2')
-
-    for file_path in file_paths:
-        json_file_path = file_path.with_suffix('.json')
-
-        with bz2.BZ2File(file_path, 'rb') as source, open(json_file_path, 'wb') as target:
-            target.write(source.read())
-
-        with open(json_file_path, 'r', encoding='utf-8') as json_file:
-            for line in json_file:
-                tweet = json.loads(line)
-                if 'retweeted_status' in tweet:
-                    process_retweet(tweet, retweets_info, mentions_info, hashtags_set, fi, ff)
-                else:
-                    process_original_tweet(tweet, retweets_info, mentions_info, hashtags_set, fi, ff)
-
-    return retweets_info, mentions_info
-
 
 def process_files_in_parallel(file_paths, hashtags_set, fi, ff, rank, size):
     retweets_info = {}
