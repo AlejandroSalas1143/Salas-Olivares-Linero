@@ -14,11 +14,11 @@ from datetime import datetime
 import shutil
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Descripción de tu script.")
+    parser = argparse.ArgumentParser(description="Descripción de tu script.", add_help=False)
     parser.add_argument("-d", "--directory", required=True, help="Directorio de entrada")
-    parser.add_argument("--fi", "--fecha_inicial", help="Fecha inicial en formato dd-mm-aa")
-    parser.add_argument("--ff", "--fecha_final", help="Fecha final en formato dd-mm-aa")
-    parser.add_argument("-ht", "--hashtags_file", help="Nombre de archivo de texto con hashtags")
+    parser.add_argument("-fi", "--fecha_inicial", help="Fecha inicial en formato dd-mm-aa")
+    parser.add_argument("-ff", "--fecha_final", help="Fecha final en formato dd-mm-aa")
+    parser.add_argument("-h", "--hashtags_file", help="Nombre de archivo de texto con hashtags")
     
     # New options for graph and JSON generation
     parser.add_argument("-grt", "--generate_retweet_graph", action="store_true", help="Generar grafo de retweets")
@@ -29,7 +29,7 @@ def parse_args():
     parser.add_argument("-jcrt", "--generate_corretweet_json", action="store_true", help="Generar JSON de corretweets")
 
     args = parser.parse_args()
-    return args.directory, args.fi, args.ff, args.hashtags_file, args
+    return args.directory, args.fecha_inicial, args.fecha_final, args.hashtags_file, args
 
 def get_tweet_id(tweet):
     return tweet['id_str'] if 'retweeted_status' in tweet else str(tweet['id'])
@@ -110,7 +110,6 @@ def process_mentions(tweet, mentions_info):
 def decompress_and_create_json_files(directory, hashtags_file=None, fi=None, ff=None):
     retweets_info = {}
     mentions_info = {}
-    detener_procesamiento_ff = False
 
     # Cargar hashtags desde el archivo
     hashtags_set = set()
@@ -137,14 +136,6 @@ def decompress_and_create_json_files(directory, hashtags_file=None, fi=None, ff=
                     process_retweet(tweet, retweets_info, mentions_info, hashtags_set, fi, ff)
                 else:
                     process_original_tweet(tweet, retweets_info, mentions_info, hashtags_set, fi, ff)
-
-                if ff is not None and not validate_tweet_date(tweet, fi, ff):
-                    # La validación falló, establecer la bandera para detener el procesamiento por ff
-                    detener_procesamiento_ff = True
-                
-            #if detener_procesamiento_ff:
-             #   break
-
 
     return retweets_info, mentions_info
 
@@ -276,8 +267,6 @@ def generate_corrtweets_json(retweets_info, arg):
                 retweeters = set(retweeted_by)
                 corrtweets_dict[author].update(retweeters)
 
-    #print(corrtweets_dict)
-
     # Encontrar corretweets comparando retweeters entre autores
     corrtweets_list = []
     for author1, author2 in combinations(corrtweets_dict, 2):
@@ -330,7 +319,6 @@ def delete_files(folder_path):
                     os.remove(file_path)
                 except Exception as e:
                     print(f"Error deleting {file_path}: {e}")
-
 
 if __name__ == "__main__":
     start_time = time.time()
